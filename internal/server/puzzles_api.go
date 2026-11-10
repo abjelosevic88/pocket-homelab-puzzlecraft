@@ -62,6 +62,36 @@ type puzzleIn struct {
 	Archived     *bool             `json:"archived"`
 	SourceRef    *string           `json:"source_ref"`
 	Words        []puzzle.WordClue `json:"words"` // shorthand: make it from these words
+	// flat shorthands for scripts and Pocket AI (instead of generate):
+	WordsText string `json:"words_text"` // "word - clue" per line
+	Theme     string `json:"theme"`
+	Size      int    `json:"size"`
+	Message   string `json:"message"`
+	Text      string `json:"text"`
+	Author    string `json:"author"`
+	Cipher    string `json:"cipher"`
+	Picture   string `json:"picture"`
+	Mode      string `json:"mode"`
+	Count     int    `json:"count"`
+	Style     string `json:"style"`
+}
+
+// shorthand turns the flat fields into "make one for me" options (nil when none is set).
+func (in puzzleIn) shorthand() *puzzle.Options {
+	words := in.Words
+	for _, w := range parseWordLines(in.WordsText) {
+		words = append(words, puzzle.WordClue{Word: w.Word, Clue: w.Clue})
+	}
+	if len(words) == 0 && in.Theme == "" && in.Size == 0 && in.Message == "" && in.Text == "" && in.Cipher == "" && in.Picture == "" && in.Mode == "" && in.Count == 0 && in.Style == "" {
+		return nil
+	}
+	o := &puzzle.Options{Words: words, Theme: in.Theme, Message: in.Message, Text: in.Text, Author: in.Author, Cipher: in.Cipher, Picture: in.Picture, Mode: in.Mode, Count: in.Count, Style: in.Style}
+	if k := ptrStr(in.Kind); k == "sudoku" {
+		o.Size = in.Size
+	} else if in.Size > 0 {
+		o.W, o.H = in.Size, in.Size
+	}
+	return o
 }
 
 // prepare tidies a puzzle's definition and tests it (sets size, ready, problems).
@@ -184,8 +214,8 @@ func (s *Server) handleCreatePuzzle(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case in.Generate != nil:
 			o = in.Generate
-		case len(in.Words) > 0:
-			o = &puzzle.Options{Words: in.Words}
+		default:
+			o = in.shorthand()
 		}
 		if o != nil {
 			if o.Language == "" {

@@ -354,3 +354,15 @@ func TestDemo(t *testing.T) {
 		t.Fatalf("demo adventures: %v", adv)
 	}
 }
+
+func TestShorthandMake(t *testing.T) {
+	a := newApp(t, nil)
+	p := a.expect(201, a.alice, "POST", "/api/v1/puzzles", map[string]any{"kind": "wordsearch", "title": "Spelling", "words_text": "because\nfriend\nschool\nlater"})
+	if p["ready"] != true || !strings.Contains(p["size_text"].(string), "4 words") {
+		t.Fatalf("word search from text: %v", p)
+	}
+	s := a.expect(201, a.alice, "POST", "/api/v1/puzzles", map[string]any{"kind": "sudoku", "level": "easy", "size": 4})
+	if !strings.HasPrefix(s["size_text"].(string), "4 × 4") {
+		t.Fatalf("4×4 sudoku: %v", s["size_text"])
+	}
+}
