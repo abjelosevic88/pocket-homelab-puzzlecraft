@@ -1,0 +1,38 @@
+/* Maze: walls as lines, the drawn way, start and end, print. */
+
+.mz-play { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.mz-board { max-width: 100%; overflow-x: auto; border-radius: 10px; outline: none; padding: 4px; background: var(--surface); border: 1px solid var(--border); transition: border-color .15s; }
+.mz-board:focus-visible { box-shadow: 0 0 0 3px var(--accent-ring); }
+.mz-board.bump { border-color: var(--danger); }
+.mz-tip { margin: 0; text-align: center; min-height: 1.5em; font-variant-numeric: tabular-nums; }
+
+.mz-svg { display: block; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer; }
+.mz-svg.preview, .mz-svg.print, .mz-svg.is-done { touch-action: auto; cursor: default; }
+.mz-walls { fill: none; stroke: var(--text); stroke-linecap: square; }
+.mz-start { fill: var(--success-soft); fill: color-mix(in srgb, var(--success) 30%, transparent); }
+.mz-end { fill: var(--danger-soft); fill: color-mix(in srgb, var(--danger) 26%, transparent); }
+.mz-path { fill: none; stroke: var(--accent); stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
+.mz-svg.is-done .mz-path { stroke: var(--success); }
+.mz-way { fill: none; stroke: var(--muted); stroke-linecap: round; stroke-linejoin: round; opacity: .45; }
+.mz-head { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.mz-mark { text-anchor: middle; dominant-baseline: central; }
+
+/* making one */
+.mz-edit { display: flex; flex-direction: column; gap: 12px; }
+.mz-field { display: flex; flex-direction: column; gap: 6px; }
+.mz-field .segmented { align-self: flex-start; max-width: 100%; overflow-x: auto; }
+.mz-switch { gap: 8px; cursor: pointer; }
+.mz-preview { display: flex; justify-content: center; overflow-x: auto; padding: 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); min-height: 120px; align-items: center; }
+.mz-wait { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+.mz-count { margin: 0; text-align: center; }
+
+/* print: black on white */
+.mz-print { display: flex; flex-direction: column; align-items: center; gap: 10px; color: #000; background: #fff; }
+.mz-print.answer { align-items: flex-start; }
+.mz-print .mz-walls { stroke: #000; }
+.mz-print .mz-start { fill: #dff3e4; }
+.mz-print .mz-end { fill: #fbe1e1; }
+.mz-print .mz-path { stroke: #555; opacity: 1; }
+.mz-print .mz-mark { fill: #000; }
+.mz-print-rule { margin: 0; font-size: 13px; color: #333; }
+.mz-print.large .mz-print-rule { font-size: 17px; }

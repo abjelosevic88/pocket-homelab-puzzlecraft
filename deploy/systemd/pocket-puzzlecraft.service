@@ -1,0 +1,23 @@
+[Unit]
+Description=Pocket Puzzlecraft — tabletop role-playing games (5E)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=pocket-puzzlecraft
+Group=pocket-puzzlecraft
+ExecStart=/usr/local/bin/pocket-puzzlecraft
+Environment=DATA_DIR=/var/lib/pocket-puzzlecraft
+Environment=PORT=8080
+Environment=BASE_URL=https://puzzles.example.com
+Environment=SECURE_COOKIES=true
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/pocket-puzzlecraft
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

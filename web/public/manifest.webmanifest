@@ -1,0 +1,51 @@
+{
+  "name": "Pocket Puzzlecraft",
+  "short_name": "Puzzlecraft",
+  "description": "Make puzzles and share them: crosswords, word searches, sudoku, picture puzzles, secret codes, quizzes, mazes, logic grids, word ladders and jigsaws — tested for one fair answer, printable, playable by anyone through a link — plus puzzle books, puzzles of the day and escape rooms and treasure hunts.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f6f8",
+  "theme_color": "#1f7a8c",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New plan",
+      "url": "/?new=1"
+    },
+    {
+      "name": "Furniture",
+      "url": "/furniture"
+    },
+    {
+      "name": "Will it fit?",
+      "url": "/fit"
+    }
+  ]
+}

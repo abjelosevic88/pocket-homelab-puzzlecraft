@@ -1,0 +1,4 @@
+# Pocket Puzzlecraft behind Caddy.
+puzzles.example.com {
+	reverse_proxy pocket-puzzlecraft:8080
+}

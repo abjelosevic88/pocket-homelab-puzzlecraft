@@ -1,0 +1,74 @@
+/* Word scramble */
+.scr-play { display: flex; flex-direction: column; gap: 10px; max-width: 720px; margin: 0 auto; width: 100%; outline: none; }
+.scr-play:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); border-radius: var(--radius-lg); }
+.scr-word {
+  display: flex; flex-direction: column; gap: 10px; padding: 12px 12px 8px; border-radius: var(--radius-lg); background: var(--surface);
+  border: 1px solid var(--border); transition: border-color .15s, box-shadow .15s;
+}
+.scr-word.sel { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); box-shadow: 0 0 0 3px var(--accent-soft); }
+.scr-word.right { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); }
+.scr-word.final { background: color-mix(in srgb, var(--star) 7%, var(--surface)); }
+.scr-word-head { display: flex; align-items: flex-start; gap: 10px; min-height: 24px; }
+.scr-num {
+  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface-2); color: var(--text-2); font-size: 12.5px; font-weight: 650;
+}
+.scr-word.final .scr-num { color: var(--star); }
+.scr-hint { font-size: 15px; line-height: 1.4; padding-top: 2px; }
+.scr-mark { width: 20px; height: 20px; flex-shrink: 0; display: inline-flex; }
+.scr-word.right .scr-mark { color: var(--success); }
+.scr-word.wrong .scr-mark { color: var(--danger); }
+
+/* the letters to use */
+.scr-tiles { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; min-height: var(--scr); }
+.scr-tile {
+  width: var(--scr); height: var(--scr); border-radius: 9px; border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: var(--accent-soft); color: var(--accent-ink); font-size: calc(var(--scr) * .5); font-weight: 700; cursor: pointer; padding: 0;
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 25%, transparent); touch-action: manipulation; transition: background .12s, opacity .12s;
+}
+.scr-tile:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.scr-tile:active { transform: translateY(1px); box-shadow: none; }
+.scr-tile.used, .scr-tile.used:hover { background: transparent; border-style: dashed; border-color: var(--border); color: transparent; box-shadow: none; cursor: default; }
+.scr-tile:disabled:not(.used) { cursor: default; opacity: .6; }
+.scr-empty { align-self: center; }
+
+/* the answer boxes */
+.scr-boxes { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
+.scr-box {
+  width: var(--scr); height: var(--scr); border-radius: 7px; border: 1.5px solid var(--border-strong); background: var(--surface-2); color: var(--text);
+  display: inline-flex; align-items: center; justify-content: center; font-size: calc(var(--scr) * .5); font-weight: 700; user-select: none; -webkit-user-select: none;
+  touch-action: manipulation; transition: background .12s, border-color .12s;
+}
+.scr-box[role="button"] { cursor: pointer; }
+.scr-box.circ { border-radius: 50%; border-color: var(--star); border-width: 2px; }
+.scr-boxes.cur .scr-box:not(.filled) { border-color: color-mix(in srgb, var(--accent) 50%, var(--border-strong)); }
+.scr-boxes.right .scr-box { background: var(--success-soft); border-color: var(--success); }
+.scr-boxes.right .scr-box.circ { border-color: var(--star); }
+.scr-boxes.wrong .scr-box.filled { background: var(--danger-soft); border-color: var(--danger); }
+
+.scr-word-tools { display: flex; align-items: center; gap: 4px; }
+.scr-status { min-height: 22px; text-align: center; font-size: 13px; }
+
+/* making */
+.scr-final-edit { padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.scr-warn { display: flex; gap: 6px; align-items: flex-start; margin: 8px 0 0; }
+.scr-preview { padding: 12px; border: 1px dashed var(--border-strong); border-radius: var(--radius); }
+.scr-preview-list { margin: 8px 0 0; padding-left: 22px; display: flex; flex-direction: column; gap: 4px; }
+.scr-preview-list li { display: flex; align-items: center; gap: 12px; min-height: 28px; }
+.scr-pv-mixed { font-family: var(--mono); font-weight: 650; color: var(--accent-ink); letter-spacing: .04em; white-space: nowrap; }
+.scr-pv-word { display: inline-flex; gap: 1px; font-size: 12.5px; color: var(--muted); }
+.scr-pv-word .circ { color: var(--text); font-weight: 700; border-radius: 50%; outline: 1.5px solid var(--star); padding: 0 3px; }
+
+/* paper */
+.scr-print { color: #000; background: #fff; }
+.scr-print ol { padding-left: 24px; margin: 0; display: flex; flex-direction: column; gap: 16px; }
+.scr-print li { break-inside: avoid; }
+.scr-print-mixed { font-size: 20px; font-weight: 700; letter-spacing: .1em; margin-bottom: 2px; }
+.scr-print.large .scr-print-mixed { font-size: 26px; }
+.scr-print-hint { font-size: 13px; margin: 0 0 6px; font-style: italic; }
+.scr-print .scr-boxes { justify-content: flex-start; }
+.scr-print .scr-box { background: #fff; border: 1.5px solid #000; border-radius: 3px; color: #000; }
+.scr-print .scr-box.circ { border-radius: 50%; border-color: #000; border-width: 2px; }
+.scr-print-final { margin-top: 22px; padding-top: 12px; border-top: 1px solid #000; break-inside: avoid; }
+.scr-print-key { color: #000; font-size: 12px; margin: 0; padding-left: 20px; columns: 3; }
+.scr-print-key .fin { font-weight: 700; }

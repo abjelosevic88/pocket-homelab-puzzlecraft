@@ -1,0 +1,89 @@
+/* Picture puzzle (nonogram): numbers on top and left, squares, modes, print. */
+
+.ng-play { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.ng-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.ng-mode { display: inline-flex; align-items: center; gap: 7px; }
+.ng-sw { width: 14px; height: 14px; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; }
+.ng-sw.fill { background: var(--ng-fill, var(--text)); }
+.ng-sw.mark { border: 1.5px solid var(--muted); color: var(--muted); font-weight: 700; }
+.ng-left-count { min-width: 9em; text-align: center; font-variant-numeric: tabular-nums; }
+.ng-scroll { max-width: 100%; overflow-x: auto; padding: 2px; }
+.ng-focus { outline: none; border-radius: 8px; width: max-content; }
+.ng-focus:focus-visible { box-shadow: 0 0 0 3px var(--accent-ring); }
+.ng-tip { margin: 0; text-align: center; max-width: 480px; }
+
+/* the board */
+.ng-board { --ng-fill: var(--text); display: grid; width: max-content; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.ng-corner { border-right: 2px solid var(--text); border-bottom: 2px solid var(--text); border-top-left-radius: 6px; }
+.ng-top { display: grid; border-bottom: 2px solid var(--text); }
+.ng-left { display: grid; border-right: 2px solid var(--text); }
+.ng-clue {
+  display: flex; gap: 0; color: var(--text); font-size: var(--ng-font); font-weight: 650; font-variant-numeric: tabular-nums; line-height: 1.05;
+  transition: color .2s, background .2s;
+}
+.ng-clue span { min-width: calc(var(--ng-font) * 1.2); text-align: center; }
+.ng-clue.col { flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 4px; border-right: 1px solid var(--grid-line); }
+.ng-clue.col span { padding: 1px 0; }
+.ng-clue.row { flex-direction: row; justify-content: flex-end; align-items: center; padding-right: 6px; border-bottom: 1px solid var(--grid-line); }
+.ng-clue.col.b5 { border-right-color: var(--border-strong); }
+.ng-clue.row.b5 { border-bottom-color: var(--border-strong); }
+.ng-clue.hot { background: var(--accent-soft); }
+.ng-clue.ok { color: var(--faint); }
+.ng-clue.bad { color: var(--danger); background: var(--danger-soft); }
+.ng-board.edit .ng-clue { color: var(--text-2); }
+
+.ng-cells { display: grid; background: var(--surface); touch-action: none; cursor: pointer; }
+.ng-board.is-done .ng-cells { cursor: default; touch-action: auto; }
+.ng-cell { box-sizing: border-box; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; transition: background .08s; }
+.ng-cell.b5r { border-right: 1.5px solid var(--text-2); }
+.ng-cell.b5b { border-bottom: 1.5px solid var(--text-2); }
+.ng-cell.hot { background: var(--hover); }
+.ng-cell.on { background: var(--ng-fill); }
+.ng-cell.x::before, .ng-cell.x::after {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 46%; height: 1.75px; border-radius: 1px; background: var(--muted);
+}
+.ng-cell.x::before { transform: translate(-50%, -50%) rotate(45deg); }
+.ng-cell.x::after { transform: translate(-50%, -50%) rotate(-45deg); }
+.ng-cell.cur { box-shadow: inset 0 0 0 2px var(--accent); }
+.ng-cell.lock:not(.on) { background: var(--surface-2); }
+.ng-board.is-done .ng-cell { border-color: transparent; }
+.ng-board.is-done .ng-cell.b5r, .ng-board.is-done .ng-cell.b5b { border-color: transparent; }
+.ng-board.is-done .ng-cell:not(.on) { background: var(--surface); }
+
+/* making one */
+.ng-edit { display: flex; flex-direction: column; gap: 10px; }
+.ng-edit .ng-scroll { align-self: center; }
+.ng-count { margin: 0; text-align: center; min-height: 1.4em; }
+.ng-colors { display: flex; gap: 5px; }
+.ng-color { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--border-strong); background: var(--sw); cursor: pointer; padding: 0; }
+.ng-color.on { box-shadow: 0 0 0 2px var(--accent); }
+.ng-lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+.ng-lib-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.ng-lib-tile:hover { background: var(--surface-2); }
+.ng-lib-tile svg { fill: var(--text); height: 84px; width: auto; max-width: 100%; }
+.ng-lib-name { font-size: 13px; font-weight: 600; text-transform: capitalize; }
+.ng-photo { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; margin-top: 12px; }
+.ng-photo-ctl { display: flex; flex-direction: column; gap: 12px; flex: 1; min-width: 220px; }
+.ng-field { display: flex; flex-direction: column; gap: 6px; }
+.ng-field input[type="range"] { width: 100%; accent-color: var(--accent); padding: 0; border: 0; box-shadow: none; height: auto; }
+.ng-switch { gap: 8px; cursor: pointer; }
+.ng-photo-prev { display: grid; border: 1px solid var(--border-strong); background: var(--surface); width: max-content; }
+.ng-photo-prev span { box-shadow: inset 0 0 0 .5px var(--grid-line); }
+.ng-photo-prev span.on { background: var(--text); }
+
+/* print: black on white */
+.ng-print { display: flex; flex-direction: column; align-items: center; gap: 12px; color: #000; background: #fff; }
+.ng-print.answer { align-items: flex-start; }
+.ng-print .ng-board { --ng-fill: #000; }
+.ng-print .ng-corner, .ng-print .ng-top, .ng-print .ng-left { border-color: #000; }
+.ng-print .ng-clue { color: #000; }
+.ng-print .ng-clue.col, .ng-print .ng-clue.row { border-color: #ccc; }
+.ng-print .ng-cells { background: #fff; cursor: default; }
+.ng-print .ng-cell { border-color: #999; }
+.ng-print .ng-cell.b5r { border-right-color: #000; }
+.ng-print .ng-cell.b5b { border-bottom-color: #000; }
+.ng-print-rule { margin: 0; font-size: 12.5px; color: #333; max-width: 640px; }
+.ng-print.large .ng-print-rule { font-size: 16px; }
+.ng-key { display: grid; border: 1px solid #000; width: max-content; }
+.ng-key span { box-shadow: inset 0 0 0 .5px #ccc; }
+.ng-key span.on { background: #000; }

@@ -1,0 +1,86 @@
+/* Sudoku: grid with box lines, highlights, pencil notes, the number pad, print. */
+
+.sd-play { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.sd-board { outline: none; border-radius: 8px; max-width: 100%; overflow-x: auto; }
+.sd-board:focus-visible { box-shadow: 0 0 0 3px var(--accent-ring); }
+
+.sd-grid {
+  display: grid; border: 2px solid var(--text); border-radius: 6px; overflow: hidden; background: var(--surface);
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: manipulation; width: max-content;
+}
+.sd-cell {
+  position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer;
+  border-right: 1px solid var(--border-strong); border-bottom: 1px solid var(--border-strong);
+  background: var(--surface); transition: background .12s;
+}
+.sd-cell { box-sizing: border-box; }
+.sd-cell.lc { border-right: 0; }
+.sd-cell.lr { border-bottom: 0; }
+.sd-cell.bx-r { border-right: 2px solid var(--text); }
+.sd-cell.bx-b { border-bottom: 2px solid var(--text); }
+.sd-cell.diag { background: var(--surface-2); }
+.sd-cell.peer { background: var(--accent-soft); }
+.sd-cell.same { background: color-mix(in srgb, var(--accent) 24%, var(--surface)); }
+.sd-cell.sel { background: color-mix(in srgb, var(--accent) 34%, var(--surface)); }
+.sd-cell.wrong { background: var(--danger-soft); }
+.sd-cell.wrong.sel { background: color-mix(in srgb, var(--danger) 22%, var(--surface)); }
+
+.sd-n { font-size: calc(var(--sd) * .56); line-height: 1; font-variant-numeric: tabular-nums; }
+.sd-cell.given .sd-n { font-weight: 750; color: var(--text); }
+.sd-cell.mine .sd-n { font-weight: 500; color: var(--accent-ink); }
+.sd-cell.clash .sd-n, .sd-cell.wrong .sd-n { color: var(--danger); }
+.sd-grid.is-done .sd-cell { cursor: default; }
+.sd-grid.is-done .sd-cell.mine .sd-n { color: var(--success); }
+
+.sd-notes { position: absolute; inset: 2px; display: grid; align-items: center; justify-items: center; pointer-events: none; }
+.sd-notes span { font-size: max(8px, calc(var(--sd) * .22)); line-height: 1; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+.sd-notes span.hl { color: var(--accent-ink); font-weight: 800; }
+
+/* number pad */
+.sd-pad { display: flex; flex-direction: column; gap: 8px; max-width: 100%; }
+.sd-nums { display: grid; gap: 6px; justify-content: center; }
+.sd-key {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text);
+  font: inherit; cursor: pointer; padding: 0; touch-action: manipulation; transition: background .12s, color .12s, border-color .12s;
+}
+.sd-key:hover { background: var(--surface-2); }
+.sd-key:active { background: var(--active); }
+.sd-key:disabled { opacity: .5; cursor: default; }
+.sd-key-n { font-size: 21px; font-weight: 650; line-height: 1; font-variant-numeric: tabular-nums; }
+.sd-key-left { font-size: 10px; color: var(--muted); line-height: 1; min-height: 10px; display: inline-flex; }
+.sd-key.full { color: var(--faint); }
+.sd-key.full .sd-key-left { color: var(--success); }
+.sd-key.pencil { border-style: dashed; border-color: var(--accent); }
+.sd-key.pencil .sd-key-n { font-size: 16px; color: var(--accent-ink); }
+.sd-tools { display: flex; gap: 8px; justify-content: center; }
+.sd-tool { flex: 1; max-width: 170px; justify-content: center; }
+.sd-tool.on { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent-ink); }
+.sd-tip { margin: 0; text-align: center; max-width: 420px; }
+
+/* making one */
+.sd-edit { display: flex; flex-direction: column; gap: 14px; }
+.sd-edit > .segmented { align-self: flex-start; max-width: 100%; overflow-x: auto; }
+.sd-edit-sec { display: flex; flex-direction: column; gap: 10px; }
+.sd-field { display: flex; flex-direction: column; gap: 6px; }
+.sd-field .segmented { align-self: flex-start; max-width: 100%; overflow-x: auto; }
+.sd-switch { gap: 10px; cursor: pointer; font-size: 13.5px; }
+.sd-edit-main { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+.sd-edit-grid { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 100%; }
+.sd-count { margin: 0; min-height: 1.4em; text-align: center; }
+.sd-photo { margin: 0; display: flex; flex-direction: column; gap: 4px; max-width: 260px; }
+.sd-photo img { width: 100%; border-radius: 8px; border: 1px solid var(--border); }
+
+/* print: black on white */
+.sd-print { display: flex; flex-direction: column; align-items: center; gap: 12px; color: #000; background: #fff; }
+.sd-print.answer { align-items: flex-start; }
+.sd-print .sd-grid { border-color: #000; background: #fff; border-radius: 0; }
+.sd-print .sd-cell { cursor: default; background: #fff; border-color: #888; }
+.sd-print .sd-cell.bx-r { border-right-color: #000; }
+.sd-print .sd-cell.bx-b { border-bottom-color: #000; }
+.sd-print .sd-cell.diag { background: #eee; }
+.sd-print .sd-cell .sd-n { color: #000; }
+.sd-print .sd-cell.given .sd-n { font-weight: 700; }
+.sd-print.answer .sd-cell.mine .sd-n { font-weight: 400; color: #444; }
+.sd-print-rule { margin: 0; font-size: 13px; color: #333; }
+.sd-print.large .sd-print-rule { font-size: 17px; }

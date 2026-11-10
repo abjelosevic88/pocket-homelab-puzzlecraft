@@ -1,0 +1,3 @@
+# Reverse proxy
+
+Set `BASE_URL` to the public address and `SECURE_COOKIES=true` behind HTTPS. See [deploy/reverse-proxy/Caddyfile](../deploy/reverse-proxy/Caddyfile). Pictures (jigsaws, quiz questions, escape-room stages) and imports come in one request each: if your proxy limits request bodies, allow at least 16 MB. `/api/*` is reachable for Homepage widgets, Shortcuts and linked apps; they send their own bearer token. The share links (`/p/…`, `/b/…`, `/a/…`) and `/api/v1/public/*` need no account — that is what players use; put the app on a public address only if you want people outside your network to play.
