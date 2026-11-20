@@ -21,6 +21,18 @@ var linkOffers = []core.Offer{
 	{Scope: "puzzlecraft:write", Name: "Make puzzles", Description: "Make a puzzle (from words and clues, a text, or \"make one for me\"), add a word list, and change or remove only the puzzles and lists it added itself."},
 }
 
+// portable is what Pocket Move may copy out and bring in for a person
+// (docs/move.md in pocket-homelab-core); Register adds move:export/import.
+var portable = &core.Portable{
+	Exports: []core.PortableExport{
+		{Path: "/api/v1/export.json", File: "puzzlecraft.json", Kind: core.KindPocket, Title: "Your puzzles with their answers and pictures, puzzle books, escape rooms and treasure hunts, and word lists"},
+		{Path: "/api/v1/export.csv", File: "puzzles.csv", Kind: core.KindCSV, Title: "Your puzzles as a table: kind, title, level, plays and best time"},
+	},
+	Imports: []core.PortableImport{
+		{Path: "/api/v1/import", Kind: core.KindPocket, Form: "file", MaxBytes: 128 << 20, Title: "Adds the puzzles, books, escape rooms, hunts and word lists from another box; what you already have is left alone"},
+	},
+}
+
 type linkRoute struct {
 	methods string
 	path    *regexp.Regexp
@@ -41,6 +53,9 @@ var errLinkScope = errors.New("outside the link's scope")
 
 // linkAllows reports whether a link token with these scopes may make this request.
 func linkAllows(scopes []string, r *http.Request) bool {
+	if portable.LinkAllows(scopes, r) {
+		return true
+	}
 	for _, lr := range linkRoutes {
 		if !strings.Contains(" "+lr.methods+" ", " "+r.Method+" ") || !lr.path.MatchString(r.URL.Path) {
 			continue

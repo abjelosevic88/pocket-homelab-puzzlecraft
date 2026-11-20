@@ -70,3 +70,5 @@ Events on the Core bus: `puzzlecraft.puzzle_created`, `puzzle_shared`, `puzzle_s
 ## Data
 
 `GET /export.json` (`?photos=0` without pictures) · `GET /export.csv` · `POST /import` (a Puzzlecraft export — again and again, nothing twice; a .puz or .ipuz file; a sudoku as 81 digits) · `GET /backup` (admins: the whole database).
+
+Pocket Move can copy your puzzles, books, escape rooms and word lists out and bring them in: `GET /pocket/portable` describes the exports (link scope `move:export`) and the import (`move:import`).
