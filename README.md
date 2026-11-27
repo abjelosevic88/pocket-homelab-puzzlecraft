@@ -95,7 +95,11 @@ Set `CORE_URL` and `CORE_REGISTRATION_KEY` and Puzzlecraft joins the box: people
 | Pocket Translate | a copy with the clues and questions translated | `translate:run` |
 | Pocket Alerts | an alert when someone finishes what you shared | `alerts:write` |
 
-Other apps use your puzzles through `puzzlecraft:read` and `puzzlecraft:write` (never the answers): Pocket AI answers “how many puzzles did I solve this week?” or “make me a hard sudoku”, Pocket Search finds puzzles and games, Pocket Day shows what you solved. Events for Pocket Flows: `puzzlecraft.puzzle_created`, `puzzle_shared`, `puzzle_solved`, `daily_solved`, `adventure_created`, `adventure_finished`.
+Other apps use your puzzles through `puzzlecraft:read` and `puzzlecraft:write` (never the answers): Pocket AI answers “how many puzzles did I solve this week?” or “make me a hard sudoku”, Pocket Search finds puzzles and games, Pocket Day shows what you solved.
+
+Pocket Search and Pocket Hub find Puzzlecraft on their own, with nothing to set up in either: your puzzles, escape rooms and hunts, puzzle books and word lists turn up in Search (`!puzzles fruit`, also `!puzzle` and `!pz`), Hub shows a “Daily puzzle” widget with today's puzzles, your days in a row and the puzzles you made last, and a quick line typed in Hub becomes a word list (“apple, pear, plum”). The day is offered the same way: what you made and solved, who solved what you shared, what is planned (Pocket Day keeps its own reading through `puzzlecraft:read` for now). The routes are in [docs/api.md](docs/api.md#pocket-search-pocket-day-and-pocket-hub).
+
+Events for Pocket Flows: `puzzlecraft.puzzle_created`, `puzzle_shared`, `puzzle_solved`, `daily_solved`, `adventure_created`, `adventure_finished`.
 
 ## Develop
 

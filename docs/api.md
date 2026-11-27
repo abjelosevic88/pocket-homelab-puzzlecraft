@@ -67,6 +67,17 @@ With a `pcx_` token from Pocket Core another app reaches only: `puzzlecraft:read
 
 Events on the Core bus: `puzzlecraft.puzzle_created`, `puzzle_shared`, `puzzle_solved`, `daily_solved`, `adventure_created`, `adventure_finished`.
 
+## Pocket Search, Pocket Day and Pocket Hub
+
+Puzzlecraft answers the four routes every Pocket app can offer (`docs/capabilities.md` in Pocket Core), so Pocket Search, Pocket Day and Pocket Hub find it on their own. Each has its own link scope that opens that one route and nothing else (`puzzlecraft:read` and `puzzlecraft:write` do not open them); a signed-in person or a personal token can call them too. Addresses (`url`) are paths in the app. No answer, hiding place or private note is in any of them.
+
+| Route | Scope | What |
+|---|---|---|
+| `GET /pocket/search?q&limit` | `pocket:search` | `{items}`: your puzzles, escape rooms and hunts, puzzle books and word lists matching `q`, a title or name that has the words first, the kinds taking turns. Each has `id` (`puzzle:3`, `adventure:1`, `book:2`, `wordlist:4`), `title`, `snippet` (size and level; the place and the first line of the story; how many puzzles or words), `kind` (crossword, word search, sudoku, … escape room, treasure hunt, mystery, party game, puzzle book, word list), `date` and `url`. What somebody else shared with you by link is never there |
+| `GET /pocket/day/{date}` (`?tz=`) | `pocket:day` | `{date, summary, items, metrics}`: the puzzles you made that day (`kind` made), what you solved with its `minutes` (solved; a test run of your own escape room is tested), what players of your shared puzzles and games finished (solved by others) and the escape rooms and hunts set for that day (planned). `summary` is “2 puzzles solved in 9 min, 1 puzzle made, 1 escape room planned”. The day is the one of `tz` when given, else the box's |
+| `GET /pocket/widget` | `pocket:widget` | `{line, metrics, items, url}`: the puzzles of the day (`done` when solved, `detail` “Solved in 4:05”, “Started” or “Not solved yet”), then the puzzles you made or changed last. `line` is “Today's 3 puzzles are waiting” or “1 of 3 solved today, 5 days in a row”; the numbers are solved today, days in a row, the longest run and how many puzzles you have. Reading it makes no puzzle |
+| `POST /pocket/capture` | `pocket:capture` | `{request_id, kind: "words", text, title}` adds a word list and answers `201 {id, title, url}`. The words are one per line or with commas between them (“apple, pear, plum”; a line “plum - a stone fruit” keeps its clue); `title` is the list's name, without one it is named after its first words (“Apple, pear, plum”). Fewer than two words of two letters or more answers `400`. The same `request_id` again answers the same and adds nothing |
+
 ## Data
 
 `GET /export.json` (`?photos=0` without pictures) · `GET /export.csv` · `POST /import` (a Puzzlecraft export — again and again, nothing twice; a .puz or .ipuz file; a sudoku as 81 digits) · `GET /backup` (admins: the whole database).

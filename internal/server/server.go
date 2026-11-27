@@ -215,6 +215,7 @@ func (s *Server) registerWithCore(ctx context.Context) error {
 		Offers:    linkOffers,
 		Uses:      append(linkUses(), core.InferenceUse()),
 		Portable:  portable,
+		Category:  "Media", Capabilities: capabilities,
 	}
 	if s.cfg.BaseURL != "" {
 		m.OIDC = &core.OIDCRequest{RedirectURIs: []string{s.oidcCallbackURL()}}

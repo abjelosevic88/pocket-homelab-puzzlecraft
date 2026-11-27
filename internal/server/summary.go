@@ -263,6 +263,50 @@ func prepLeft(p []store.PrepItem) int {
 	return n
 }
 
+// dayPlay is a go finished on a day, with what it was at.
+type dayPlay struct {
+	store.Play
+	at    time.Time // when it was finished, on that day's clock
+	title string
+	path  string // its page here
+}
+
+// playsOn lists the goes finished on a day as loc's clock has it: the
+// person's own, and those of the players of what they shared. A go at
+// something that is gone is left out.
+func (s *Server) playsOn(ctx context.Context, uid int64, day string, loc *time.Location) ([]dayPlay, error) {
+	done := true
+	list, err := s.store.ListPlays(ctx, uid, store.PlayFilter{Finished: &done, From: store.AddDays(day, -1), To: store.AddDays(day, 1), Limit: 200})
+	out := []dayPlay{}
+	for _, p := range list {
+		if p.FinishedAt == nil {
+			continue
+		}
+		t, err := time.Parse(time.RFC3339Nano, *p.FinishedAt)
+		if err != nil || t.In(loc).Format("2006-01-02") != day {
+			continue
+		}
+		d := dayPlay{Play: p, at: t.In(loc)}
+		switch p.What {
+		case "daily":
+			d.title, d.path = "Puzzle of the day: "+puzzle.KindName[p.Kind], "/today/"+dayOf(&p)+"/"+p.Kind
+		case "puzzle":
+			if pz, err := s.store.GetPuzzle(ctx, uid, p.RefID); err == nil {
+				d.title, d.path = pz.Title, fmt.Sprintf("/puzzles/%d", pz.ID)
+			}
+		case "adventure":
+			if a, err := s.store.GetAdventure(ctx, uid, p.RefID); err == nil {
+				d.title, d.path = a.Title, fmt.Sprintf("/adventures/%d", a.ID)
+			}
+		}
+		if d.title == "" {
+			continue
+		}
+		out = append(out, d)
+	}
+	return out, err
+}
+
 // handleDay is one day for Pocket Day: puzzles solved, adventures played or coming.
 func (s *Server) handleDay(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -272,33 +316,13 @@ func (s *Server) handleDay(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "the date is YYYY-MM-DD")
 		return
 	}
-	done := true
-	list, _ := s.store.ListPlays(ctx, uid, store.PlayFilter{Finished: &done, From: store.AddDays(day, -1), To: store.AddDays(day, 1), Limit: 200})
+	list, _ := s.playsOn(ctx, uid, day, time.Local)
 	items := []map[string]any{}
 	minutes := int64(0)
 	for _, p := range list {
-		if p.FinishedAt == nil {
-			continue
-		}
-		t, err := time.Parse(time.RFC3339Nano, *p.FinishedAt)
-		if err != nil || t.Local().Format("2006-01-02") != day {
-			continue
-		}
-		title, url := "", ""
-		switch p.What {
-		case "daily":
-			title, url = "Puzzle of the day: "+puzzle.KindName[p.Kind], s.link("/today?date="+dayOf(&p))
-		case "puzzle":
-			if pz, err := s.store.GetPuzzle(ctx, uid, p.RefID); err == nil {
-				title, url = pz.Title, s.link(fmt.Sprintf("/puzzles/%d", pz.ID))
-			}
-		case "adventure":
-			if a, err := s.store.GetAdventure(ctx, uid, p.RefID); err == nil {
-				title, url = a.Title, s.link(fmt.Sprintf("/adventures/%d", a.ID))
-			}
-		}
-		if title == "" {
-			continue
+		url := s.link(p.path)
+		if p.What == "daily" {
+			url = s.link("/today?date=" + dayOf(&p.Play))
 		}
 		who := "You"
 		if p.Via != "me" {
@@ -310,7 +334,7 @@ func (s *Server) handleDay(w http.ResponseWriter, r *http.Request) {
 		if p.Hints > 0 {
 			sub += fmt.Sprintf(", %d %s", p.Hints, plural(p.Hints, "hint", "hints"))
 		}
-		items = append(items, map[string]any{"time": t.Local().Format("15:04"), "title": title, "sub": sub, "url": url, "kind": p.Kind, "mine": p.Via == "me"})
+		items = append(items, map[string]any{"time": p.at.Format("15:04"), "title": p.title, "sub": sub, "url": url, "kind": p.Kind, "mine": p.Via == "me"})
 	}
 	advs, _ := s.store.ListAdventures(ctx, uid)
 	planned := []map[string]any{}
@@ -322,36 +346,31 @@ func (s *Server) handleDay(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"date": day, "count": len(items), "minutes": minutes, "items": items, "planned": planned})
 }
 
-// handleSearch finds puzzles, adventures, books and word lists (for Pocket Search and the palette).
-func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	uid := actorID(ctx)
-	q := strings.TrimSpace(r.URL.Query().Get("q"))
-	out := []map[string]any{}
-	if q == "" {
-		writeJSON(w, http.StatusOK, map[string]any{"results": out})
-		return
-	}
+// found is what a search finds, each kind in the order its own list has.
+type found struct {
+	puzzles []store.Puzzle
+	advs    []store.Adventure
+	books   []store.Book
+	lists   []store.WordList
+}
+
+// find looks for the words in a person's puzzles (title, instructions, notes,
+// tags), adventures, books and word lists (the name, or one of the words).
+func (s *Server) find(ctx context.Context, uid int64, q string) found {
+	var f found
 	lq := strings.ToLower(q)
-	if list, err := s.store.ListPuzzles(ctx, uid, store.PuzzleFilter{Q: q, Limit: 30}); err == nil {
-		for _, p := range list {
-			out = append(out, map[string]any{"type": "puzzle", "id": p.ID, "title": p.Title, "snippet": puzzle.KindName[p.Kind] + " · " + p.SizeText, "kind": p.Kind,
-				"date": p.UpdatedAt, "url": s.link(fmt.Sprintf("/puzzles/%d", p.ID)), "path": fmt.Sprintf("/puzzles/%d", p.ID)})
-		}
-	}
+	f.puzzles, _ = s.store.ListPuzzles(ctx, uid, store.PuzzleFilter{Q: q, Limit: 30})
 	if advs, err := s.store.ListAdventures(ctx, uid); err == nil {
 		for _, a := range advs {
 			if strings.Contains(strings.ToLower(a.Title+" "+a.Intro+" "+a.Theme+" "+a.Place), lq) {
-				out = append(out, map[string]any{"type": "adventure", "id": a.ID, "title": a.Title, "snippet": clip(firstLine(a.Intro), 160), "kind": a.Kind, "date": a.Date,
-					"url": s.link(fmt.Sprintf("/adventures/%d", a.ID)), "path": fmt.Sprintf("/adventures/%d", a.ID)})
+				f.advs = append(f.advs, a)
 			}
 		}
 	}
 	if books, err := s.store.ListBooks(ctx, uid); err == nil {
 		for _, b := range books {
 			if strings.Contains(strings.ToLower(b.Title+" "+b.Subtitle), lq) {
-				out = append(out, map[string]any{"type": "book", "id": b.ID, "title": b.Title, "snippet": fmt.Sprintf("Puzzle book, %d puzzles", len(b.Items)), "date": b.UpdatedAt,
-					"url": s.link(fmt.Sprintf("/books/%d", b.ID)), "path": fmt.Sprintf("/books/%d", b.ID)})
+				f.books = append(f.books, b)
 			}
 		}
 	}
@@ -365,10 +384,39 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			if hit {
-				out = append(out, map[string]any{"type": "wordlist", "id": l.ID, "title": l.Name, "snippet": fmt.Sprintf("Word list, %d words", len(l.Words)), "date": l.UpdatedAt,
-					"url": s.link(fmt.Sprintf("/words?list=%d", l.ID)), "path": fmt.Sprintf("/words?list=%d", l.ID)})
+				f.lists = append(f.lists, l)
 			}
 		}
+	}
+	return f
+}
+
+// handleSearch finds puzzles, adventures, books and word lists (for Pocket Search and the palette).
+func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	uid := actorID(ctx)
+	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	out := []map[string]any{}
+	if q == "" {
+		writeJSON(w, http.StatusOK, map[string]any{"results": out})
+		return
+	}
+	f := s.find(ctx, uid, q)
+	for _, p := range f.puzzles {
+		out = append(out, map[string]any{"type": "puzzle", "id": p.ID, "title": p.Title, "snippet": puzzle.KindName[p.Kind] + " · " + p.SizeText, "kind": p.Kind,
+			"date": p.UpdatedAt, "url": s.link(fmt.Sprintf("/puzzles/%d", p.ID)), "path": fmt.Sprintf("/puzzles/%d", p.ID)})
+	}
+	for _, a := range f.advs {
+		out = append(out, map[string]any{"type": "adventure", "id": a.ID, "title": a.Title, "snippet": clip(firstLine(a.Intro), 160), "kind": a.Kind, "date": a.Date,
+			"url": s.link(fmt.Sprintf("/adventures/%d", a.ID)), "path": fmt.Sprintf("/adventures/%d", a.ID)})
+	}
+	for _, b := range f.books {
+		out = append(out, map[string]any{"type": "book", "id": b.ID, "title": b.Title, "snippet": fmt.Sprintf("Puzzle book, %d puzzles", len(b.Items)), "date": b.UpdatedAt,
+			"url": s.link(fmt.Sprintf("/books/%d", b.ID)), "path": fmt.Sprintf("/books/%d", b.ID)})
+	}
+	for _, l := range f.lists {
+		out = append(out, map[string]any{"type": "wordlist", "id": l.ID, "title": l.Name, "snippet": fmt.Sprintf("Word list, %d words", len(l.Words)), "date": l.UpdatedAt,
+			"url": s.link(fmt.Sprintf("/words?list=%d", l.ID)), "path": fmt.Sprintf("/words?list=%d", l.ID)})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"results": out})
 }

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 )
 
@@ -175,18 +176,43 @@ func (s *Store) GetWordList(ctx context.Context, uid, id int64) (*WordList, erro
 	return w, notFound(err)
 }
 
+// AddWordList adds a word list; after, when given, runs in the same
+// transaction once the list has its id (a receipt for the request that made it).
+func (s *Store) AddWordList(ctx context.Context, w *WordList, after func(*sql.Tx) error) error {
+	if w.Words == nil {
+		w.Words = []WordClue{}
+	}
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback() //nolint:errcheck
+	res, err := tx.ExecContext(ctx, `INSERT INTO wordlists (user_id, name, language, words, source) VALUES (?,?,?,?,?)`, w.UserID, w.Name, w.Language, toJSON(w.Words), w.Source)
+	if err != nil {
+		return err
+	}
+	id, _ := res.LastInsertId()
+	w.ID = id
+	if after != nil {
+		if err := after(tx); err != nil {
+			w.ID = 0
+			return err
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		w.ID = 0
+		return err
+	}
+	return nil
+}
+
 // SaveWordList creates or updates a word list.
 func (s *Store) SaveWordList(ctx context.Context, w *WordList) error {
 	if w.Words == nil {
 		w.Words = []WordClue{}
 	}
 	if w.ID == 0 {
-		res, err := s.DB.ExecContext(ctx, `INSERT INTO wordlists (user_id, name, language, words, source) VALUES (?,?,?,?,?)`, w.UserID, w.Name, w.Language, toJSON(w.Words), w.Source)
-		if err != nil {
-			return err
-		}
-		w.ID, _ = res.LastInsertId()
-		return nil
+		return s.AddWordList(ctx, w, nil)
 	}
 	res, err := s.DB.ExecContext(ctx, `UPDATE wordlists SET name = ?, language = ?, words = ?, updated_at = ? WHERE user_id = ? AND id = ?`, w.Name, w.Language, toJSON(w.Words), Now(), w.UserID, w.ID)
 	if err != nil {

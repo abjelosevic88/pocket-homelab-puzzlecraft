@@ -99,6 +99,26 @@ func (s *Store) ListPuzzles(ctx context.Context, uid int64, f PuzzleFilter) ([]P
 	return out, rows.Err()
 }
 
+// PuzzlesMade lists the puzzles a person made between two days (UTC dates,
+// both included), oldest first, without the ones put away (no data).
+func (s *Store) PuzzlesMade(ctx context.Context, uid int64, from, to string, limit int) ([]Puzzle, error) {
+	rows, err := s.DB.QueryContext(ctx, `SELECT `+puzzleCols+` FROM puzzles p WHERE p.user_id = ? AND p.archived = 0
+		AND substr(p.created_at, 1, 10) >= ? AND substr(p.created_at, 1, 10) <= ? ORDER BY p.created_at, p.id LIMIT ?`, uid, from, to, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []Puzzle{}
+	for rows.Next() {
+		p, err := scanPuzzle(rows, false)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, *p)
+	}
+	return out, rows.Err()
+}
+
 // GetPuzzle returns one of a person's puzzles with its definition.
 func (s *Store) GetPuzzle(ctx context.Context, uid, id int64) (*Puzzle, error) {
 	p, err := scanPuzzle(s.DB.QueryRowContext(ctx, `SELECT `+puzzleCols+` FROM puzzles p WHERE p.user_id = ? AND p.id = ?`, uid, id), true)

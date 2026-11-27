@@ -33,6 +33,20 @@ var portable = &core.Portable{
 	},
 }
 
+// capabilities is what Pocket Search, Pocket Day and Pocket Hub may do here
+// for a person (docs/capabilities.md in pocket-homelab-core); Register adds
+// the pocket:search, pocket:day, pocket:widget and pocket:capture offers.
+var capabilities = core.Capabilities{
+	Search: &core.Searchable{What: "Your puzzles, escape rooms and treasure hunts, puzzle books and word lists, by title and by the words in a list",
+		Kinds: searchKinds(), Bangs: []string{"puzzles", "puzzle", "pz"}},
+	Day: &core.DayFeed{Label: "Puzzles", One: "puzzle", Many: "puzzles",
+		What: "The puzzles you made and solved that day and how long they took, who solved what you shared, and the escape rooms and hunts set for that day"},
+	Widget: &core.Widget{Title: "Daily puzzle", What: "Today's puzzles and whether you solved them, your days in a row, and the puzzles you made last"},
+	Capture: &core.QuickCapture{Kinds: []core.CaptureKind{
+		{Kind: "words", Label: "Word list", What: "A new word list from the words you type, with commas between them", Fields: []string{"title"}},
+	}},
+}
+
 type linkRoute struct {
 	methods string
 	path    *regexp.Regexp
@@ -53,7 +67,7 @@ var errLinkScope = errors.New("outside the link's scope")
 
 // linkAllows reports whether a link token with these scopes may make this request.
 func linkAllows(scopes []string, r *http.Request) bool {
-	if portable.LinkAllows(scopes, r) {
+	if portable.LinkAllows(scopes, r) || capabilities.LinkAllows(scopes, r) {
 		return true
 	}
 	for _, lr := range linkRoutes {
